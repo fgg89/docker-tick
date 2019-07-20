@@ -1,0 +1,13 @@
+{
+        "id": "10001",
+        "srcId": "10000",
+        "name": "My Kapacitor",
+        "username": "",
+        "password": "",
+        "url": "http://kapacitor:9092",
+        "insecureSkipVerify": false,
+        "active": true,
+        "organization": "sandbox_org",
+        "type": "",
+        "metadata": null
+    }
