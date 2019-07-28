@@ -1,0 +1,18 @@
+[Unit]
+Description=TICK Stack
+Documentation=https://github.com/fgg89/docker-tick.git
+After=docker.service
+Requires=docker.service
+
+[Service]
+Restart=always
+
+ExecStartPre=/usr/local/bin/docker-compose -f /home/pi/repos/fgg89/docker-tick/docker-compose.yml down
+
+ExecStart=/usr/local/bin/docker-compose -f /home/pi/repos/fgg89/docker-tick/docker-compose.yml up
+
+ExecStop=/usr/local/bin/docker-compose -f /home/pi/repos/fgg89/docker-tick/docker-compose.yml down
+#ExecStop=/usr/bin/docker rm $(/usr/bin/docker ps -a -f status=exited -q)
+
+[Install]
+WantedBy=multi-user.target

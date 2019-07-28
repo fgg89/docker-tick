@@ -1,0 +1,84 @@
+var db = 'telegraf'
+
+var rp = 'autogen'
+
+var measurement = 'rpi_temp'
+
+var groupBy = []
+
+var whereFilter = lambda: ("host" == 'raspberrypi2')
+
+var name = 'Temperature'
+
+var idVar = name
+
+var message = 'Alert: {{ index .Tags "host" }}
+Value: {{ index .Fields "value" }}
+Level: {{.Level}}
+Time: {{.Time}} '
+
+var idTag = 'alertID'
+
+var levelTag = 'level'
+
+var messageField = 'message'
+
+var durationField = 'duration'
+
+var outputDB = 'chronograf'
+
+var outputRP = 'autogen'
+
+var outputMeasurement = 'alerts'
+
+var triggerType = 'threshold'
+
+var crit = 70
+
+var warn = 60
+
+var period = 10m
+
+var data = stream
+    |from()
+        .database(db)
+        .retentionPolicy(rp)
+        .measurement(measurement)
+        .groupBy(groupBy)
+        .where(whereFilter)
+    |eval(lambda: "value")
+        .as('value')
+    |window()
+        .period(period)
+        .every(period)
+
+var trigger = data
+    |alert()
+        .crit(lambda: "value" > crit)
+        .warn(lambda: "value" > warn)
+        .message(message)
+        .id(idVar)
+        .idTag(idTag)
+        .levelTag(levelTag)
+        .messageField(messageField)
+        .durationField(durationField)
+        .telegram()
+        .chatId('1733798')
+        .parseMode('HTML')
+        .disableWebPagePreview()
+
+trigger
+    |eval(lambda: float("value"))
+        .as('value')
+        .keep()
+    |influxDBOut()
+        .create()
+        .database(outputDB)
+        .retentionPolicy(outputRP)
+        .measurement(outputMeasurement)
+        .tag('alertName', name)
+        .tag('triggerType', triggerType)
+
+trigger
+    |httpOut('output')
+
