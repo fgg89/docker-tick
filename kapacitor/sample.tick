@@ -1,43 +1,28 @@
+//Parameters
 var db = 'telegraf'
-
 var rp = 'autogen'
-
 var measurement = 'rpi_temp'
-
-var groupBy = []
-
-var whereFilter = lambda: ("host" == 'raspberrypi2')
-
+var groupBy = ['host']
+var whereFilter = lambda: ("host" != 'gibberish')
 var name = 'Temperature'
-
 var idVar = name
-
-var message = 'Alert: {{ index .Tags "host" }}
+var message = '
+Alert: {{ index .Tags "host" }}
 Value: {{ index .Fields "value" }}
 Level: {{.Level}}
-Time: {{.Time}} '
-
+Time: {{.Time}}
+'
 var idTag = 'alertID'
-
 var levelTag = 'level'
-
 var messageField = 'message'
-
 var durationField = 'duration'
-
 var outputDB = 'chronograf'
-
 var outputRP = 'autogen'
-
 var outputMeasurement = 'alerts'
-
 var triggerType = 'threshold'
-
 var crit = 70
-
 var warn = 60
-
-var period = 10m
+var period = 5m
 
 var data = stream
     |from()
@@ -81,4 +66,3 @@ trigger
 
 trigger
     |httpOut('output')
-
