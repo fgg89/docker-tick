@@ -1,0 +1,146 @@
+version: '3'
+
+networks:
+  sandbox:
+    driver: bridge
+
+
+services:
+  influxdb:
+    # Full tag list: https://hub.docker.com/r/library/influxdb/tags/
+    image: "influxdb"
+    hostname: "influxdb"
+    networks:
+      - sandbox
+    ports:
+      # The API for InfluxDB is served on port 8086
+      - "8086:8086"
+      - "8082:8082"
+      # UDP Port
+      - "8089:8089/udp"
+      - "25826:25826/udp"
+    volumes:
+      # Mount for influxdb data directory
+      - influxdb-data:/var/lib/influxdb
+      # Mount for influxdb configuration
+      - ./influxdb/:/etc/influxdb/
+      - ./influxdb/types.db:/usr/share/collectd/types.db
+
+  telegraf:
+    # Full tag list: https://hub.docker.com/r/library/telegraf/tags/
+    image: "telegraf:latest"
+    # Telegraf requires network access to InfluxDB
+    depends_on:
+      - influxdb
+    hostname: "telegraf"
+    networks:
+      - sandbox
+    volumes:
+      # Mount for telegraf configuration
+      - ./telegraf/:/etc/telegraf/
+      # Mount for Docker API access
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  kapacitor:
+  # Full tag list: https://hub.docker.com/r/library/kapacitor/tags/
+    image: "kapacitor:latest"
+    # Kapacitor requires network access to InfluxDB
+    depends_on:
+      - influxdb
+    hostname: "kapacitor"
+    networks:
+      - sandbox
+    ports:
+      # The API for Kapacitor is served on port 9092
+      - "9092:9092"
+    volumes:
+      # Mount for kapacitor data directory
+      - kapacitor-data/:/var/lib/kapacitor
+      # Mount for kapacitor configuration
+      - ./kapacitor/:/etc/kapacitor/
+      - ./kapacitor/types.db:/usr/share/collectd/types.db
+
+  chronograf:
+    # Full tag list: https://hub.docker.com/r/library/chronograf/tags/
+    image: "chronograf:latest"
+    # Chronograf requires network access to InfluxDB
+    depends_on:
+      - kapacitor
+      - influxdb
+      - telegraf
+    environment:
+      RESOURCES_PATH: "/usr/share/chronograf/resources"
+    hostname: "chronograf"
+    networks:
+      - sandbox
+    ports:
+      # The WebUI for Chronograf is served on port 8888
+      - "8888:8888"
+    volumes:
+      # Mount for chronograf database
+      - chronograf-data/:/var/lib/chronograf/
+      - ./chronograf/resources/:/usr/share/chronograf/resources
+
+  grafana:
+    # Full tag list: https://hub.docker.com/r/library/chronograf/tags/
+    image: "grafana/grafana:latest"
+    depends_on:
+      - influxdb
+    environment:
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-simple-json-datasource,grafana-piechart-panel"
+      # GF_AWS_PROFILES: "default"
+      # GF_AWS_default_ACCESS_KEY_ID: "YOUR_ACCESS_KEY"
+      # GF_AWS_default_SECRET_ACCESS_KEY: "YOUR_SECRET_KEY"
+      # GF_AWS_default_REGION: "eu-west-1"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+    hostname: "grafana"
+    networks:
+      - sandbox
+    ports:
+      # The WebUI for Grafana is served on port 3000
+      - "3000:3000"
+    volumes:
+      # Mount for grafana database
+      - grafana-data:/var/lib/grafana
+      # Mount for grafana configuration
+      - ./grafana/:/etc/grafana/
+
+  collectd:
+    #
+    image: "fr3nd/collectd"
+    depends_on:
+      - influxdb
+#    privileged: true
+#    network_mode: host
+    hostname: "collectd"
+    networks:
+      - sandbox
+    ports:
+      - "25826"
+    volumes:
+#      - /:/hostfs:ro
+#      - /proc:/mnt/proc:ro
+      - ./collectd/collectd.conf:/etc/collectd/collectd.conf
+      - ./collectd/types.db:/usr/share/collectd/types.db
+  postfix:
+    build:
+      context: ./docker-postfix
+      dockerfile: Dockerfile
+    depends_on:
+      - grafana
+#    privileged: true
+#    network_mode: host
+    hostname: "postfix"
+    networks:
+      - sandbox
+    ports:
+      - "25:25"
+#    volumes:
+#      - /:/hostfs:ro
+#      - /proc:/mnt/proc:ro
+
+volumes:
+  influxdb-data:
+  kapacitor-data:
+  chronograf-data:
+  grafana-data:
