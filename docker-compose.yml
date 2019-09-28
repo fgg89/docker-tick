@@ -3,7 +3,9 @@ version: '3'
 networks:
   sandbox:
     driver: bridge
-
+    ipam:
+      config:
+        - subnet: 172.16.1.0/24
 
 services:
   influxdb:
@@ -122,6 +124,7 @@ services:
 #      - /proc:/mnt/proc:ro
       - ./collectd/collectd.conf:/etc/collectd/collectd.conf
       - ./collectd/types.db:/usr/share/collectd/types.db
+
   postfix:
     build:
       context: ./docker-postfix
@@ -135,9 +138,6 @@ services:
       - sandbox
     ports:
       - "25:25"
-#    volumes:
-#      - /:/hostfs:ro
-#      - /proc:/mnt/proc:ro
 
 volumes:
   influxdb-data:

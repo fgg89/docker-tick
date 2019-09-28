@@ -5,14 +5,13 @@ After=docker.service
 Requires=docker.service
 
 [Service]
-Restart=always
+#Restart=always
+Type=oneshot
+RemainAfterExit=yes
 
-ExecStartPre=/usr/local/bin/docker-compose -f /home/pi/repos/fgg89/docker-tick/docker-compose.yml down
-
-ExecStart=/usr/local/bin/docker-compose -f /home/pi/repos/fgg89/docker-tick/docker-compose.yml up
-
-ExecStop=/usr/local/bin/docker-compose -f /home/pi/repos/fgg89/docker-tick/docker-compose.yml down
-#ExecStop=/usr/bin/docker rm $(/usr/bin/docker ps -a -f status=exited -q)
+ExecStartPre=/usr/bin/docker-compose -f REPLACE_PATH_REPO/docker-tick/docker-compose.yml down
+ExecStart=/usr/bin/docker-compose -f REPLACE_PATH_REPO/docker-tick/docker-compose.yml up -d
+ExecStop=/usr/bin/docker-compose -f REPLACE_PATH_REPO/docker-tick/docker-compose.yml down
 
 [Install]
 WantedBy=multi-user.target
